@@ -106,16 +106,15 @@ impl PrivateKey {
     /// key management solutions, and NOT to promote double usage of keys under
     /// several schemes, which would lead to BAD vulnerabilities.
     pub fn from_ed25519_private_bytes(private_slice: &[u8]) -> Result<Self, CryptoMaterialError> {
-        let ed25519_secretkey = ed25519_dalek::SecretKey::from_bytes(private_slice)
+        let ed25519_secretkey = ed25519_dalek::SecretKey::try_from(private_slice)
             .map_err(|_| CryptoMaterialError::DeserializationError)?;
-        let expanded_key = ed25519_dalek::ExpandedSecretKey::from(&ed25519_secretkey);
+        let expanded_key = ed25519_dalek::hazmat::ExpandedSecretKey::from(&ed25519_secretkey);
 
-        let mut expanded_keypart = [0u8; 32];
-        expanded_keypart.copy_from_slice(&expanded_key.to_bytes()[..32]);
+        let expanded_keypart = expanded_key.scalar.to_bytes();
         let potential_x25519 = x25519::PrivateKey::from(expanded_keypart);
 
         // This checks for x25519 clamping & reduction, which is an RFC requirement
-        if potential_x25519.to_bytes()[..] != expanded_key.to_bytes()[..32] {
+        if potential_x25519.to_bytes().as_slice() != expanded_key.scalar.as_bytes().as_slice() {
             Err(CryptoMaterialError::DeserializationError)
         } else {
             Ok(potential_x25519)
@@ -139,6 +138,7 @@ impl PublicKey {
             return Err(CryptoMaterialError::DeserializationError);
         }
         let ed_point = curve25519_dalek::edwards::CompressedEdwardsY::from_slice(ed25519_bytes)
+            .map_err(|_| CryptoMaterialError::DeserializationError)?
             .decompress()
             .ok_or(CryptoMaterialError::DeserializationError)?;
 
@@ -179,7 +179,7 @@ impl traits::Uniform for PrivateKey {
     where
         R: RngCore + CryptoRng,
     {
-        Self(x25519_dalek::StaticSecret::new(rng))
+        Self(x25519_dalek::StaticSecret::random_from_rng(rng))
     }
 }
 
