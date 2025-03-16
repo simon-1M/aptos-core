@@ -199,10 +199,10 @@ where
 /// Returns n random bytes.
 pub fn random_bytes<R>(rng: &mut R, n: usize) -> Vec<u8>
 where
-    R: ::rand::Rng + Copy,
+    R: ::rand::Rng + Clone,
 {
     let range = distributions::Uniform::from(0u8..u8::MAX);
-    rng.sample_iter(&range).take(n).collect()
+    rng.clone().sample_iter(&range).take(n).collect()
 }
 
 /// Generates `num_signers` random key-pairs.

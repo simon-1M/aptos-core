@@ -95,7 +95,7 @@ ristretto255:scalar_uniform_from_64_bytes
 ristretto255:scalar_from_u128
 ristretto255:scalar_from_u64
 ristretto255:scalar_invert
-ristretto255:scalar_is_canonical
+# ristretto255:scalar_is_canonical
 ristretto255:scalar_mul
 ristretto255:scalar_neg
 ristretto255:scalar_sub

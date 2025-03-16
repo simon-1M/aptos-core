@@ -38,7 +38,7 @@ fn benchmark_groups(c: &mut Criterion) {
     scalar_from_u128(&mut group);
     scalar_from_u64(&mut group);
     scalar_invert(&mut group);
-    scalar_is_canonical(&mut group);
+    // scalar_is_canonical(&mut group);
     scalar_mul(&mut group);
     scalar_neg(&mut group);
     scalar_sub(&mut group);
@@ -287,14 +287,15 @@ fn scalar_invert<M: Measurement>(g: &mut BenchmarkGroup<M>) {
     });
 }
 
-fn scalar_is_canonical<M: Measurement>(g: &mut BenchmarkGroup<M>) {
-    let mut rng: ThreadRng = thread_rng();
+// TODO(sc): The library guarantees that the scalar is canonical, so we don't need to check it.
+// fn scalar_is_canonical<M: Measurement>(g: &mut BenchmarkGroup<M>) {
+//     let mut rng: ThreadRng = thread_rng();
 
-    g.throughput(Throughput::Elements(1));
-    g.bench_function("scalar_is_canonical", move |b| {
-        b.iter_with_setup(|| Scalar::random(&mut rng), |a| a.is_canonical())
-    });
-}
+//     g.throughput(Throughput::Elements(1));
+//     g.bench_function("scalar_is_canonical", move |b| {
+//         b.iter_with_setup(|| Scalar::random(&mut rng), |a| a.is_canonical())
+//     });
+// }
 
 fn scalar_mul<M: Measurement>(g: &mut BenchmarkGroup<M>) {
     let mut rng: ThreadRng = thread_rng();

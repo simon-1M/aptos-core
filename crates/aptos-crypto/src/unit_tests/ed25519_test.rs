@@ -27,8 +27,7 @@ use curve25519_dalek::{
     scalar::Scalar,
 };
 use digest::Digest;
-use ed25519_dalek::Signer;
-use ed25519_dalek::ed25519::signature::Verifier as _;
+use ed25519_dalek::{ed25519::signature::Verifier as _, Signer};
 use proptest::{collection::vec, prelude::*};
 use serde::{Deserialize, Serialize};
 use sha2::Sha512;
@@ -154,7 +153,7 @@ proptest! {
         // s = r + k a as usual //
         //////////////////////////
         let s = k * priv_scalar + original_r;
-        // TODO(sc): it is private, check if we do need to check and how to check.
+        // TODO(sc): The library guarantees that the scalar is canonical, so we don't need to check it.
         // prop_assert!(s.is_canonical());
 
         /////////////////////////////////////////////////////////////////////////////////

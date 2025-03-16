@@ -145,7 +145,8 @@ impl Ed25519PublicKey {
     pub fn to_compressed_edwards_y(&self) -> CompressedEdwardsY {
         // CompressedEdwardsY::from_slice only fail with TryFromSliceError
         // if the input bytes slice does not have a length of 32.
-        CompressedEdwardsY::from_slice(&self.to_bytes().as_slice()).expect("The Ed25519PublicKey bytes must be 32 bytes")
+        CompressedEdwardsY::from_slice(&self.to_bytes().as_slice())
+            .expect("The Ed25519PublicKey bytes must be 32 bytes")
     }
 }
 
@@ -180,7 +181,7 @@ impl crate::traits::SigningKey for Ed25519PrivateKey {
 impl Uniform for Ed25519PrivateKey {
     fn generate<R>(rng: &mut R) -> Self
     where
-        R: ::rand::RngCore + ::rand::CryptoRng 
+        R: ::rand::RngCore + ::rand::CryptoRng,
     {
         Ed25519PrivateKey(ed25519_dalek::SigningKey::generate(rng))
     }

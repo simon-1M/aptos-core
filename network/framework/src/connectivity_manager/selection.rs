@@ -122,11 +122,9 @@ fn choose_peers_by_ping_latency(
 
     // Get the random peers by weight
     let weighted_selected_peers = peer_ids_and_latency_weights
-        .choose_multiple_weighted(
-            &mut ::rand::thread_rng(),
-            num_peers_to_choose,
-            |peer| peer.1,
-        )
+        .choose_multiple_weighted(&mut ::rand::thread_rng(), num_peers_to_choose, |peer| {
+            peer.1
+        })
         .map(|peers| peers.into_iter().map(|peer| *peer.0).collect::<Vec<_>>());
 
     // Return the random peers by weight

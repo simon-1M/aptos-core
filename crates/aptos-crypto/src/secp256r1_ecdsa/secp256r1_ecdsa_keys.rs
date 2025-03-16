@@ -134,7 +134,7 @@ impl Uniform for PrivateKey {
     // `RustCrypto` RngCore trait
     fn generate<R>(rng: &mut R) -> Self
     where
-        R: ::rand::RngCore + ::rand::CryptoRng ,
+        R: ::rand::RngCore + ::rand::CryptoRng,
     {
         let mut bytes = [0u8; PRIVATE_KEY_LENGTH * 2];
         rng.fill_bytes(&mut bytes);
