@@ -19,7 +19,7 @@ pub fn test_generated_bulletproof_verifies() {
     let bg = BulletproofGens::new(64, 1);
 
     // Pick a random value and a Pedersen commitment blinder for it
-    let value = rng.gen_range(0u64, (2u128.pow(MAX_RANGE_BITS as u32) - 1u128) as u64);
+    let value = rng.gen_range(0u64..(2u128.pow(MAX_RANGE_BITS as u32) - 1u128) as u64);
     let value_scalar = Scalar::from(value);
     let blinder = Scalar::hash_from_bytes::<sha3::Sha3_512>(b"some random blinder");
 

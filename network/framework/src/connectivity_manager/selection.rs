@@ -11,7 +11,7 @@ use aptos_logger::error;
 use aptos_types::PeerId;
 use maplit::hashset;
 use ordered_float::OrderedFloat;
-use rand_latest::prelude::*;
+use rand::prelude::*;
 use std::{cmp::Ordering, collections::HashSet, sync::Arc};
 
 /// Chooses peers to dial randomly from the given list of eligible
@@ -22,7 +22,7 @@ pub fn choose_peers_to_dial_randomly(
     num_peers_to_dial: usize,
 ) -> Vec<(PeerId, DiscoveredPeer)> {
     // Shuffle the peers (so that we don't always dial the same ones first)
-    eligible_peers.shuffle(&mut ::rand_latest::thread_rng());
+    eligible_peers.shuffle(&mut ::rand::thread_rng());
 
     // Sort the peers by priority (this takes into account last dial times)
     eligible_peers
@@ -123,7 +123,7 @@ fn choose_peers_by_ping_latency(
     // Get the random peers by weight
     let weighted_selected_peers = peer_ids_and_latency_weights
         .choose_multiple_weighted(
-            &mut ::rand_latest::thread_rng(),
+            &mut ::rand::thread_rng(),
             num_peers_to_choose,
             |peer| peer.1,
         )
@@ -184,7 +184,7 @@ fn extend_with_random_peers(
         let num_remaining_peers = num_required_peers.saturating_sub(num_selected_peers);
         let remaining_peer_ids = unselected_peer_ids
             .into_iter()
-            .choose_multiple(&mut ::rand_latest::thread_rng(), num_remaining_peers);
+            .choose_multiple(&mut ::rand::thread_rng(), num_remaining_peers);
 
         // Add the remaining peers to the selected peers
         selected_peer_ids.extend(remaining_peer_ids);

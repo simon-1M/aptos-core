@@ -148,9 +148,10 @@ pub fn small_order_pk_with_adversarial_message(
                 h.update(R.compress().as_bytes());
                 h.update(pk_bytes);
                 h.update(msg_bytes);
-
-                let k = Scalar::from_hash(h);
-
+                let mut output = [0u8; 64];
+                output.copy_from_slice(h.finalize().as_slice());
+                let k = Scalar::from_bytes_mod_order_wide(&output);
+                // let k = Scalar::from_hash(h);
                 k * pk_point + (*R) == EdwardsPoint::identity()
             },
         )

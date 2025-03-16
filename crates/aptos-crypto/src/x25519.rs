@@ -111,10 +111,10 @@ impl PrivateKey {
         let expanded_key = ed25519_dalek::hazmat::ExpandedSecretKey::from(&ed25519_secretkey);
 
         let expanded_keypart = expanded_key.scalar.to_bytes();
-        let potential_x25519 = x25519::PrivateKey::from(expanded_keypart);
+        let potential_x25519 = x25519::PrivateKey::from(ed25519_secretkey);
 
         // This checks for x25519 clamping & reduction, which is an RFC requirement
-        if potential_x25519.to_bytes().as_slice() != expanded_key.scalar.as_bytes().as_slice() {
+        if potential_x25519.to_bytes().as_slice() != expanded_keypart.as_slice() {
             Err(CryptoMaterialError::DeserializationError)
         } else {
             Ok(potential_x25519)
