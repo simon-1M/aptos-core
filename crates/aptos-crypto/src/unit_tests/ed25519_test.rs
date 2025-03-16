@@ -69,7 +69,7 @@ proptest! {
         let torsion_component = CompressedEdwardsY(EIGHT_TORSION[idx]).decompress().unwrap();
         let mut order_bytes = [0u8;32];
         order_bytes[..8].copy_from_slice(&(eight_torsion_order(torsion_component)).to_le_bytes());
-        let torsion_order = Scalar::from_bits(order_bytes);
+        let torsion_order = Scalar::from_bytes_mod_order(order_bytes);
 
         prop_assert_eq!(torsion_component.mul(torsion_order), EdwardsPoint::default());
     }
@@ -146,7 +146,7 @@ proptest! {
         key_bytes[0] &= 248;
         key_bytes[31] &= 127;
         key_bytes[31] |= 64;
-        let priv_scalar = Scalar::from_bits(key_bytes);
+        let priv_scalar = Scalar::from_bytes_mod_order(key_bytes);
         // check pub_point = priv_scalar * basepoint
         prop_assert_eq!(ED25519_BASEPOINT_POINT.mul(priv_scalar), pub_point);
 
@@ -162,7 +162,7 @@ proptest! {
         /////////////////////////////////////////////////////////////////////////////////
         let mut eight_scalar_bytes = [0u8;32];
         eight_scalar_bytes[..8].copy_from_slice(&(8_usize).to_le_bytes());
-        let eight_scalar = Scalar::from_bits(eight_scalar_bytes);
+        let eight_scalar = Scalar::from_bytes_mod_order(eight_scalar_bytes);
 
         let r_candidate_point = EdwardsPoint::vartime_double_scalar_mul_basepoint(&k, &(mixed_pub_point.neg().mul_by_cofactor()), &(s * eight_scalar));
         prop_assert_eq!(mixed_r_point.mul_by_cofactor(), r_candidate_point);
