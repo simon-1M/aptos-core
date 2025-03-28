@@ -38,7 +38,7 @@ fn benchmark_groups(c: &mut Criterion) {
     scalar_from_u128(&mut group);
     scalar_from_u64(&mut group);
     scalar_invert(&mut group);
-    // scalar_is_canonical(&mut group);
+    // scalar_is_canonical(&mut group); // New 25519 lib impl guarantees canonical
     scalar_mul(&mut group);
     scalar_neg(&mut group);
     scalar_sub(&mut group);

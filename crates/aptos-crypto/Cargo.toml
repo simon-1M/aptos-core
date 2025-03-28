@@ -35,6 +35,7 @@ ff = { workspace = true }
 hex = { workspace = true }
 hkdf = { workspace = true }
 libsecp256k1 = { workspace = true }
+k256 = { workspace = true }
 merlin = { workspace = true }
 more-asserts = { workspace = true }
 neptune = { workspace = true }
