@@ -2,7 +2,7 @@
 // SPDX-License-Identifier: Apache-2.0
 //! This module provides APIs for private keys and public keys used in Secp256k1 ecdsa.
 //! Version 2 of the secp256k1 ecdsa implementation using k256 crate instead of libsecp256k1.
-//! 
+//!
 use crate::{
     hash::{CryptoHash, HashValue},
     traits,
@@ -11,10 +11,15 @@ use crate::{
 use anyhow::{anyhow, Result};
 use aptos_crypto_derive::{key_name, DeserializeKey, SerializeKey, SilentDebug, SilentDisplay};
 use core::convert::TryFrom;
+use k256::elliptic_curve::scalar::IsHigh;
 use serde::Serialize;
+use signature::hazmat::PrehashVerifier as _;
 
-/// libsecp256k1 expects pre-hashed messages of 32-bytes.
+/// Expects pre-hashed messages of 32-bytes.
 pub const MESSAGE_LENGTH: usize = 32;
+/// Pre-hashed message type alias
+pub type PrehashedMessage = [u8; MESSAGE_LENGTH];
+
 /// Secp256k1 ecdsa private keys are 256-bit.
 pub const PRIVATE_KEY_LENGTH: usize = 32;
 /// Secp256k1 ecdsa public keys contain a prefix indicating compression and two 32-byte coordinates.
@@ -25,7 +30,7 @@ pub const SIGNATURE_LENGTH: usize = 64;
 /// Secp256k1 ecdsa private key
 #[derive(DeserializeKey, Eq, PartialEq, SerializeKey, SilentDebug, SilentDisplay)]
 #[key_name("Secp256k1EcdsaPrivateKey")]
-pub struct PrivateKey(pub(crate) libsecp256k1::SecretKey);
+pub struct PrivateKey(pub(crate) k256::ecdsa::SigningKey);
 
 #[cfg(feature = "assert-private-keys-not-cloneable")]
 static_assertions::assert_not_impl_any!(PrivateKey: Clone);
@@ -41,21 +46,21 @@ impl Clone for PrivateKey {
 impl PrivateKey {
     /// Serialize the private key into a byte vector
     pub fn to_bytes(&self) -> Vec<u8> {
-        self.0.serialize().to_vec()
+        self.0.to_bytes().to_vec()
     }
 
-    fn sign(&self, message: &libsecp256k1::Message) -> Signature {
-        let (signature, _recovery_id) = libsecp256k1::sign(message, &self.0);
-        Signature(signature)
+    fn sign(&self, prehash: &PrehashedMessage) -> signature::Result<Signature> {
+        let (signature, _recovery_id) = self.0.sign_prehash_recoverable(prehash)?;
+        Ok(Signature(signature))
     }
 
     /// Private function aimed at minimizing code duplication between sign
     /// methods of the SigningKey implementation. This should remain private.
     #[cfg(any(test, feature = "fuzzing"))]
-    fn sign_arbitrary_message(&self, message: &[u8]) -> Signature {
+    fn sign_arbitrary_message(&self, message: &[u8]) -> signature::Result<Signature> {
         let message =
-            bytes_to_message(message).expect("Consistently hashed to 32-bytes, should never fail.");
-        // libsecp256k1 ensures that the s in signature is normalized
+            bytes_to_prehash_message(message).expect("Consistently hashed to 32-bytes, should never fail.");
+        // k256 ensures that the s in signature is normalized
         self.sign(&message)
     }
 }
@@ -64,7 +69,7 @@ impl TryFrom<&[u8]> for PrivateKey {
     type Error = CryptoMaterialError;
 
     fn try_from(bytes: &[u8]) -> std::result::Result<PrivateKey, CryptoMaterialError> {
-        match libsecp256k1::SecretKey::parse_slice(bytes) {
+        match k256::ecdsa::SigningKey::from_slice(bytes) {
             Ok(private_key) => Ok(PrivateKey(private_key)),
             Err(_) => Err(CryptoMaterialError::DeserializationError),
         }
@@ -73,6 +78,7 @@ impl TryFrom<&[u8]> for PrivateKey {
 
 impl traits::Length for PrivateKey {
     fn length(&self) -> usize {
+        // The serialized private key is expected to be 32 bytes
         PRIVATE_KEY_LENGTH
     }
 }
@@ -89,15 +95,17 @@ impl traits::SigningKey for PrivateKey {
         &self,
         message: &T,
     ) -> Result<Signature, CryptoMaterialError> {
-        match bytes_to_message(&traits::signing_message(message)?) {
-            Ok(message) => Ok(self.sign(&message)),
+        match bytes_to_prehash_message(&traits::signing_message(message)?) {
+            Ok(message) => Ok(self
+                .sign(&message)
+                .map_err(|e| CryptoMaterialError::SignatureSigningError(e.to_string()))?),
             Err(_) => Err(CryptoMaterialError::SerializationError),
         }
     }
 
     #[cfg(any(test, feature = "fuzzing"))]
     fn sign_arbitrary_message(&self, message: &[u8]) -> Signature {
-        PrivateKey::sign_arbitrary_message(self, message)
+        PrivateKey::sign_arbitrary_message(self, message).expect("Failed to sign arbitrary message")
     }
 }
 
@@ -109,7 +117,7 @@ impl traits::Uniform for PrivateKey {
         loop {
             let mut ret = [0u8; PRIVATE_KEY_LENGTH];
             rng.fill_bytes(&mut ret);
-            if let Ok(key) = libsecp256k1::SecretKey::parse(&ret) {
+            if let Ok(key) = k256::ecdsa::SigningKey::from_slice(&ret) {
                 return Self(key);
             }
         }
@@ -118,19 +126,19 @@ impl traits::Uniform for PrivateKey {
 
 impl ValidCryptoMaterial for PrivateKey {
     fn to_bytes(&self) -> Vec<u8> {
-        self.to_bytes().to_vec()
+        self.to_bytes()
     }
 }
 
 /// Secp256k1 ecds public key
 #[derive(DeserializeKey, Clone, Eq, PartialEq, SerializeKey)]
 #[key_name("Secp256k1EcdsaPublicKey")]
-pub struct PublicKey(pub(crate) libsecp256k1::PublicKey);
+pub struct PublicKey(pub(crate) k256::ecdsa::VerifyingKey);
 
 impl PublicKey {
     /// Serialize the public key into a byte vector (full length)
     pub fn to_bytes(&self) -> Vec<u8> {
-        self.0.serialize().to_vec()
+        self.0.to_sec1_bytes().to_vec()
     }
 }
 
@@ -157,7 +165,7 @@ impl TryFrom<&[u8]> for PublicKey {
     type Error = CryptoMaterialError;
 
     fn try_from(bytes: &[u8]) -> std::result::Result<PublicKey, CryptoMaterialError> {
-        match libsecp256k1::PublicKey::parse_slice(bytes, None) {
+        match k256::ecdsa::VerifyingKey::from_sec1_bytes(bytes) {
             Ok(public_key) => Ok(PublicKey(public_key)),
             Err(_) => Err(CryptoMaterialError::DeserializationError),
         }
@@ -166,7 +174,7 @@ impl TryFrom<&[u8]> for PublicKey {
 
 impl From<&PrivateKey> for PublicKey {
     fn from(private_key: &PrivateKey) -> Self {
-        PublicKey(libsecp256k1::PublicKey::from_secret_key(&private_key.0))
+        PublicKey(private_key.0.verifying_key().clone())
     }
 }
 
@@ -182,7 +190,7 @@ impl traits::Length for PublicKey {
 
 impl ValidCryptoMaterial for PublicKey {
     fn to_bytes(&self) -> Vec<u8> {
-        self.to_bytes().to_vec()
+        self.to_bytes()
     }
 }
 
@@ -194,27 +202,30 @@ impl traits::VerifyingKey for PublicKey {
 /// Secp256k1 ecdsa signature
 #[derive(DeserializeKey, Clone, SerializeKey)]
 #[key_name("Secp256k1EcdsaSignature")]
-pub struct Signature(pub(crate) libsecp256k1::Signature);
+pub struct Signature(pub(crate) k256::ecdsa::Signature);
 
 impl Signature {
     /// Serialize the signature into a byte vector
     pub fn to_bytes(&self) -> Vec<u8> {
-        self.0.serialize().to_vec()
+        self.0.to_vec()
     }
 
     fn verify(
         &self,
-        message: &libsecp256k1::Message,
-        public_key: &libsecp256k1::PublicKey,
+        message: &PrehashedMessage,
+        public_key: &k256::ecdsa::VerifyingKey,
     ) -> Result<()> {
         // Prevent malleability attacks, low order only. The library only signs in low
         // order, so this was done intentionally.
-        if self.0.s.is_high() {
-            Err(anyhow!(CryptoMaterialError::CanonicalRepresentationError))
-        } else if libsecp256k1::verify(message, &self.0, public_key) {
-            Ok(())
-        } else {
-            Err(anyhow!("Unable to verify signature."))
+        // See https://github.com/bitcoin/bips/blob/master/bip-0062.mediawiki#low-s-values-in-signatures
+
+        if self.0.s().is_high().into() {
+            return Err(anyhow!(CryptoMaterialError::CanonicalRepresentationError));
+        } 
+        
+        match public_key.verify_prehash(message, &self.0) {
+            Ok(_) => Ok(()),
+            Err(e) => Err(anyhow!("Unable to verify signature: {e:?}")),
         }
     }
 }
@@ -231,7 +242,7 @@ impl TryFrom<&[u8]> for Signature {
     type Error = CryptoMaterialError;
 
     fn try_from(bytes: &[u8]) -> std::result::Result<Signature, CryptoMaterialError> {
-        match libsecp256k1::Signature::parse_standard_slice(bytes) {
+        match k256::ecdsa::Signature::from_slice(bytes) {
             Ok(signature) => Ok(Signature(signature)),
             Err(_) => Err(CryptoMaterialError::DeserializationError),
         }
@@ -261,12 +272,12 @@ impl traits::Signature for Signature {
     type VerifyingKeyMaterial = PublicKey;
 
     fn verify<T: CryptoHash + Serialize>(&self, message: &T, public_key: &PublicKey) -> Result<()> {
-        let message = bytes_to_message(&traits::signing_message(message)?)?;
+        let message = bytes_to_prehash_message(&traits::signing_message(message)?)?;
         self.verify(&message, &public_key.0)
     }
 
     fn verify_arbitrary_msg(&self, message: &[u8], public_key: &PublicKey) -> Result<()> {
-        let message = bytes_to_message(message)?;
+        let message = bytes_to_prehash_message(message)?;
         self.verify(&message, &public_key.0)
     }
 
@@ -287,7 +298,9 @@ impl ValidCryptoMaterial for Signature {
     }
 }
 
-fn bytes_to_message(message: &[u8]) -> Result<libsecp256k1::Message> {
+fn bytes_to_prehash_message(message: &[u8]) -> Result<[u8; MESSAGE_LENGTH]> {
     let message_digest = HashValue::sha3_256_of(message).to_vec();
-    libsecp256k1::Message::parse_slice(&message_digest).map_err(|e| anyhow!("{}", e))
+    message_digest
+        .try_into()
+        .map_err(|_| anyhow!("Failed to convert message digest to [u8; MESSAGE_LENGTH]"))
 }

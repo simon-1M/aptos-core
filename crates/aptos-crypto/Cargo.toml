@@ -61,6 +61,8 @@ thiserror = { workspace = true }
 tiny-keccak = { workspace = true }
 typenum = { workspace = true }
 x25519-dalek = { workspace = true }
+alloy-rlp = { version = "0.3.11" }
+elliptic-curve = { version = "0.13.8" }
 
 [dev-dependencies]
 arbitrary = { workspace = true, features = ["derive"] }

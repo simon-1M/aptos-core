@@ -7,6 +7,7 @@
 //! For examples on how to use these traits, see the implementations of the [`crate::ed25519`]
 
 use crate::hash::{CryptoHash, CryptoHasher};
+use alloy_rlp::Encodable;
 use anyhow::Result;
 use core::convert::{From, TryFrom};
 use rand::{rngs::StdRng, CryptoRng, RngCore, SeedableRng};
@@ -40,6 +41,8 @@ pub enum CryptoMaterialError {
     PointNotOnCurveError,
     /// BitVec errors in accountable multi-sig schemes.
     BitVecError(String),
+    /// Signature signing error.
+    SignatureSigningError(String),
 }
 
 /// The serialized length of the data that enables macro derived serialization and deserialization.
@@ -146,7 +149,7 @@ pub trait SigningKey:
     }
 }
 
-/// Returns the signing message for the given message.
+/// Returns the signing message for the given message using bcs serialization.
 /// It is used by `SigningKey#sign` function.
 pub fn signing_message<T: CryptoHash + Serialize>(
     message: &T,
@@ -154,6 +157,16 @@ pub fn signing_message<T: CryptoHash + Serialize>(
     let mut bytes = <T::Hasher as CryptoHasher>::seed().to_vec();
     bcs::serialize_into(&mut bytes, &message)
         .map_err(|_| CryptoMaterialError::SerializationError)?;
+    Ok(bytes)
+}
+
+/// Returns the signing message for the given message using rlp encoding.
+/// It is used by `SigningKey#sign` function.
+pub fn signing_message_rlp<T: CryptoHash + alloy_rlp::Encodable>(
+    message: &T,
+) -> Result<Vec<u8>, CryptoMaterialError> {
+    let mut bytes = <T::Hasher as CryptoHasher>::seed().to_vec();
+    message.encode(&mut bytes);
     Ok(bytes)
 }
 
@@ -326,7 +339,7 @@ pub(crate) mod private {
     impl Sealed for crate::secp256k1_ecdsa::PublicKey {}
     impl Sealed for crate::secp256k1_ecdsa::Signature {}
 
-    impl Sealed for crate::secp256k1_ecdsa_v2::PrivateKey {}
-    impl Sealed for crate::secp256k1_ecdsa_v2::PublicKey {}
-    impl Sealed for crate::secp256k1_ecdsa_v2::Signature {}
+    // impl Sealed for crate::secp256k1_ecdsa_v2::PrivateKey {}
+    // impl Sealed for crate::secp256k1_ecdsa_v2::PublicKey {}
+    // impl Sealed for crate::secp256k1_ecdsa_v2::Signature {}
 }
