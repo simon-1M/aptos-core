@@ -27,7 +27,7 @@ use aptos_api_types::{
     Transaction, TransactionData, TransactionOnChainData, TransactionsBatchSingleSubmissionFailure,
     TransactionsBatchSubmissionResult, UserTransaction, VerifyInput, VerifyInputWithRecursion, U64,
 };
-use aptos_crypto::{hash::CryptoHash, signing_message};
+use aptos_crypto::{hash::CryptoHash, signing_message_bcs};
 use aptos_types::{
     account_address::AccountAddress,
     mempool_status::MempoolStatusCode,
@@ -1529,7 +1529,7 @@ impl TransactionsApi {
             })?;
 
         let raw_message = match request.secondary_signers {
-            Some(secondary_signer_addresses) => signing_message(
+            Some(secondary_signer_addresses) => signing_message_bcs(
                 &RawTransactionWithData::new_multi_agent(
                     raw_txn,
                     secondary_signer_addresses

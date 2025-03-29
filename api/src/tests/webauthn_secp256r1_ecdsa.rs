@@ -13,7 +13,7 @@ mod tests {
         secp256r1_ecdsa::{
             PrivateKey as Secp256r1EcdsaPrivateKey, PublicKey as Secp256r1EcdsaPublicKey,
         },
-        signing_message, HashValue, SigningKey,
+        signing_message_bcs, HashValue, SigningKey,
     };
     use aptos_sdk::types::LocalAccount;
     use aptos_types::transaction::{
@@ -39,7 +39,7 @@ mod tests {
 
     /// Given a `RawTransaction`, returns a test `CollectedClientData` struct
     fn get_collected_client_data(raw_transaction: &RawTransaction) -> CollectedClientData {
-        let signing_message = signing_message(raw_transaction).unwrap();
+        let signing_message = signing_message_bcs(raw_transaction).unwrap();
         let sha3_256_raw_txn = HashValue::sha3_256_of(signing_message.as_slice());
         let sha3_256_raw_txn_bytes = Bytes::from(sha3_256_raw_txn.to_vec());
 

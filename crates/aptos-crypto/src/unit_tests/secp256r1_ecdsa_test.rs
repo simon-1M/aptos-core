@@ -184,7 +184,7 @@ proptest! {
         // signature. It does not detect it.
         prop_assert!(rustcrypto_sig.is_ok());
 
-        let msg_bytes = signing_message(&message);
+        let msg_bytes = signing_message_bcs(&message);
         prop_assert!(msg_bytes.is_ok());
 
         let rustcrypto_sig = rustcrypto_sig.unwrap();

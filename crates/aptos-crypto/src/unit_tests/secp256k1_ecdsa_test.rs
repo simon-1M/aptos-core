@@ -6,6 +6,7 @@ use crate::{
     test_utils::KeyPair,
     Signature, SigningKey, Uniform,
 };
+use elliptic_curve::scalar::IsHigh as _;
 use rand_core::OsRng;
 
 /// Tests that an individual signature share computed correctly on a message m passes verification on m.
@@ -95,17 +96,18 @@ fn malleability() {
         secp256k1_ecdsa::Signature::try_from(&signature_bytes[..]).unwrap();
     assert_eq!(signature, signature_deserialized);
 
-    let mut high_signature = signature.clone();
-    high_signature.0.s = -high_signature.0.s;
+    let high_signature = secp256k1_ecdsa::Signature(
+        k256::ecdsa::Signature::from_scalars(signature.0.r(), -signature.0.s()).unwrap(),
+    );
     let high_signature_bytes = high_signature.to_bytes();
 
     // We can load
     secp256k1_ecdsa::Signature::try_from(&high_signature_bytes[..]).unwrap();
 
     // Ensure this is now high.
-    assert!(!signature.0.s.is_high());
-    assert!(high_signature.0.s.is_high());
-    assert!(high_signature.0.s != signature.0.s);
+    assert!(signature.0.s().is_high().unwrap_u8() == 0);
+    assert!(high_signature.0.s().is_high().unwrap_u8() == 1);
+    assert!(high_signature.0.s().as_ref() != signature.0.s().as_ref());
     high_signature
         .verify_arbitrary_msg(message, &key_pair.public_key)
         .unwrap_err();

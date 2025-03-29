@@ -25,7 +25,7 @@ use aptos_crypto::{
     hash::CryptoHash,
     multi_ed25519::{MultiEd25519PublicKey, MultiEd25519Signature},
     secp256k1_ecdsa,
-    traits::{signing_message, SigningKey},
+    traits::{signing_message_bcs, SigningKey},
     CryptoMaterialError, HashValue,
 };
 use aptos_crypto_derive::{BCSCryptoHash, CryptoHasher};
@@ -431,7 +431,7 @@ impl RawTransaction {
 
     /// Return the signing message for creating transaction signature.
     pub fn signing_message(&self) -> Result<Vec<u8>, CryptoMaterialError> {
-        signing_message(self)
+        signing_message_bcs(self)
     }
 }
 
@@ -446,7 +446,7 @@ fn gen_auth(
         },
         Auth::Abstraction(function_info, sign_function) => {
             let digest =
-                HashValue::sha3_256_of(signing_message(user_signed_message)?.as_slice()).to_vec();
+                HashValue::sha3_256_of(signing_message_bcs(user_signed_message)?.as_slice()).to_vec();
             AccountAuthenticator::abstraction(
                 function_info.clone(),
                 digest.clone(),
@@ -459,7 +459,7 @@ fn gen_auth(
             sign_function,
         } => {
             let digest =
-                HashValue::sha3_256_of(signing_message(user_signed_message)?.as_slice()).to_vec();
+                HashValue::sha3_256_of(signing_message_bcs(user_signed_message)?.as_slice()).to_vec();
             AccountAuthenticator::domain_abstraction(
                 function_info.clone(),
                 digest.clone(),

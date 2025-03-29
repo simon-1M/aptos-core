@@ -488,10 +488,10 @@ proptest! {
         let sig_dalek = ed25519_dalek::Signature::from_slice(&sig_bytes).unwrap();
 
         // We expect ed25519-dalek verify to succeed
-        prop_assert!(pk_dalek.verify(signing_message(&m).unwrap().as_ref(), &sig_dalek).is_ok());
+        prop_assert!(pk_dalek.verify(signing_message_bcs(&m).unwrap().as_ref(), &sig_dalek).is_ok());
 
         // We expect ed25519-dalek verify_strict to fail
-        prop_assert!(pk_dalek.verify_strict(signing_message(&m).unwrap().as_ref(), &sig_dalek).is_err());
+        prop_assert!(pk_dalek.verify_strict(signing_message_bcs(&m).unwrap().as_ref(), &sig_dalek).is_err());
 
         // We expect our own validation to fail in Ed25519Signature::verify_arbitrary_msg, since it
         // calls ed25519-dalek's verify_strict

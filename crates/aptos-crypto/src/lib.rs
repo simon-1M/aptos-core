@@ -18,7 +18,12 @@ pub mod hash;
 pub mod hkdf;
 pub mod multi_ed25519;
 pub mod noise;
-pub mod secp256k1_ecdsa;
+// The v2 uses k256 crate.
+pub mod secp256k1_ecdsa_v2;
+// Export as secp256k1_ecdsa for backwards compatibility.
+pub use secp256k1_ecdsa_v2 as secp256k1_ecdsa;
+// The original uses libsecp256k1 crate.
+// pub mod secp256k1_ecdsa;
 pub mod secp256r1_ecdsa;
 pub mod test_utils;
 pub mod traits;

@@ -168,7 +168,7 @@ impl crate::traits::SigningKey for Ed25519PrivateKey {
     ) -> Result<Ed25519Signature, CryptoMaterialError> {
         Ok(Ed25519PrivateKey::sign_arbitrary_message(
             self,
-            signing_message(message)?.as_ref(),
+            signing_message_bcs(message)?.as_ref(),
         ))
     }
 

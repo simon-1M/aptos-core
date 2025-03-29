@@ -79,7 +79,7 @@ where
 }
 
 #[cfg(any(test, feature = "fuzzing"))]
-use crate::signing_message;
+use crate::signing_message_bcs;
 #[cfg(any(test, feature = "fuzzing"))]
 use curve25519_dalek::constants::EIGHT_TORSION;
 #[cfg(any(test, feature = "fuzzing"))]
@@ -142,7 +142,7 @@ pub fn small_order_pk_with_adversarial_message(
             |(R, pk_point, msg)| {
                 let pk_bytes = pk_point.compress().to_bytes();
 
-                let msg_bytes = signing_message(msg).unwrap();
+                let msg_bytes = signing_message_bcs(msg).unwrap();
 
                 let mut h: Sha512 = Sha512::new();
                 h.update(R.compress().as_bytes());
