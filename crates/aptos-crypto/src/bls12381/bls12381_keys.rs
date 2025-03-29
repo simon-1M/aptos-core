@@ -21,7 +21,7 @@
 //! their PoPs verified.
 
 use crate::{
-    bls12381, bls12381::DST_BLS_SIG_IN_G2_WITH_POP, hash::CryptoHash, signing_message, traits,
+    bls12381, bls12381::DST_BLS_SIG_IN_G2_WITH_POP, hash::CryptoHash, signing_message_bcs, traits,
     CryptoMaterialError, Genesis, Length, Uniform, ValidCryptoMaterial,
     ValidCryptoMaterialStringExt, VerifyingKey,
 };
@@ -116,7 +116,7 @@ impl traits::SigningKey for PrivateKey {
         Ok(bls12381::Signature {
             sig: self
                 .privkey
-                .sign(&signing_message(message)?, DST_BLS_SIG_IN_G2_WITH_POP, &[]),
+                .sign(&signing_message_bcs(message)?, DST_BLS_SIG_IN_G2_WITH_POP, &[]),
         })
     }
 

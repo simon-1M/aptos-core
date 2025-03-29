@@ -121,7 +121,7 @@ impl SignatureTrait for Signature {
     /// Verifies that the provided signature is valid for the provided message, going beyond the
     /// [NIST SP 800-186](https://csrc.nist.gov/publications/detail/sp/800-186/final) specification, to prevent scalar malleability as done in [BIP146](https://github.com/bitcoin/bips/blob/master/bip-0146.mediawiki).
     fn verify<T: CryptoHash + Serialize>(&self, message: &T, public_key: &PublicKey) -> Result<()> {
-        Self::verify_arbitrary_msg(self, &signing_message(message)?, public_key)
+        Self::verify_arbitrary_msg(self, &signing_message_bcs(message)?, public_key)
     }
 
     /// Checks that `self` is valid for an arbitrary &[u8] `message` using `public_key`.

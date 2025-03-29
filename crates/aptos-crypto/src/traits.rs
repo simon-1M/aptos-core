@@ -7,7 +7,6 @@
 //! For examples on how to use these traits, see the implementations of the [`crate::ed25519`]
 
 use crate::hash::{CryptoHash, CryptoHasher};
-use alloy_rlp::Encodable;
 use anyhow::Result;
 use core::convert::{From, TryFrom};
 use rand::{rngs::StdRng, CryptoRng, RngCore, SeedableRng};
@@ -151,7 +150,7 @@ pub trait SigningKey:
 
 /// Returns the signing message for the given message using bcs serialization.
 /// It is used by `SigningKey#sign` function.
-pub fn signing_message<T: CryptoHash + Serialize>(
+pub fn signing_message_bcs<T: CryptoHash + Serialize>(
     message: &T,
 ) -> Result<Vec<u8>, CryptoMaterialError> {
     let mut bytes = <T::Hasher as CryptoHasher>::seed().to_vec();

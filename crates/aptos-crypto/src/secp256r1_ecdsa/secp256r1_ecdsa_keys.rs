@@ -118,7 +118,7 @@ impl SigningKey for PrivateKey {
     ) -> Result<Signature, CryptoMaterialError> {
         Ok(PrivateKey::sign_arbitrary_message(
             self,
-            signing_message(message)?.as_ref(),
+            signing_message_bcs(message)?.as_ref(),
         ))
     }
 

@@ -22,7 +22,7 @@ use crate::{
         DST_BLS_SIG_IN_G2_WITH_POP,
     },
     hash::CryptoHash,
-    signing_message, traits, CryptoMaterialError, Length, ValidCryptoMaterial,
+    signing_message_bcs, traits, CryptoMaterialError, Length, ValidCryptoMaterial,
     ValidCryptoMaterialStringExt,
 };
 use anyhow::{anyhow, Result};
@@ -107,7 +107,7 @@ impl Signature {
     ) -> Result<()> {
         let mut messages: Vec<Vec<u8>> = vec![];
         for message in msgs {
-            messages.push(signing_message(*message)?);
+            messages.push(signing_message_bcs(*message)?);
         }
 
         let msgs_refs = messages
@@ -139,7 +139,7 @@ impl traits::Signature for Signature {
 
     /// Serializes the message of type `T` to bytes and calls `Signature::verify_arbitrary_msg`.
     fn verify<T: CryptoHash + Serialize>(&self, message: &T, public_key: &PublicKey) -> Result<()> {
-        self.verify_arbitrary_msg(&signing_message(message)?, public_key)
+        self.verify_arbitrary_msg(&signing_message_bcs(message)?, public_key)
     }
 
     /// Verifies a BLS signature share or multisignature. Does not assume the signature to be

@@ -5,7 +5,7 @@ use crate::{
     crypto::{
         ed25519::{Ed25519PrivateKey, Ed25519PublicKey},
         hash::CryptoHash,
-        signing_message,
+        signing_message_bcs,
         traits::Uniform,
         CryptoMaterialError,
     },
@@ -578,7 +578,7 @@ pub struct HardwareWalletAccount {
 impl TransactionSigner for HardwareWalletAccount {
     fn sign_transaction(&self, txn: RawTransaction) -> Result<SignedTransaction> {
         let signature = self.sign_arbitrary_message(
-            signing_message(&txn)
+            signing_message_bcs(&txn)
                 .expect("Unable to convert txn to signing message.")
                 .as_ref(),
         )?;

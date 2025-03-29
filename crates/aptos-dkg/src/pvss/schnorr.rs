@@ -3,7 +3,7 @@
 
 use crate::utils::{hash_to_scalar, random::random_scalar, HasMultiExp};
 use anyhow::bail;
-use aptos_crypto::signing_message;
+use aptos_crypto::signing_message_bcs;
 use aptos_crypto_derive::{BCSCryptoHash, CryptoHasher};
 use blstrs::Scalar;
 use ff::Field;
@@ -51,7 +51,7 @@ fn schnorr_hash<Gr>(c: Challenge<Gr>) -> Scalar
 where
     Gr: Serialize,
 {
-    let c = signing_message(&c)
+    let c = signing_message_bcs(&c)
         .expect("unexpected error during Schnorr challenge struct serialization");
 
     hash_to_scalar(&c, SCHNORR_POK_DST)

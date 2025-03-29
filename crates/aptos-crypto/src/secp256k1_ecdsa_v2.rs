@@ -95,7 +95,7 @@ impl traits::SigningKey for PrivateKey {
         &self,
         message: &T,
     ) -> Result<Signature, CryptoMaterialError> {
-        match bytes_to_prehash_message(&traits::signing_message(message)?) {
+        match bytes_to_prehash_message(&traits::signing_message_bcs(message)?) {
             Ok(message) => Ok(self
                 .sign(&message)
                 .map_err(|e| CryptoMaterialError::SignatureSigningError(e.to_string()))?),
@@ -272,7 +272,7 @@ impl traits::Signature for Signature {
     type VerifyingKeyMaterial = PublicKey;
 
     fn verify<T: CryptoHash + Serialize>(&self, message: &T, public_key: &PublicKey) -> Result<()> {
-        let message = bytes_to_prehash_message(&traits::signing_message(message)?)?;
+        let message = bytes_to_prehash_message(&traits::signing_message_bcs(message)?)?;
         self.verify(&message, &public_key.0)
     }
 

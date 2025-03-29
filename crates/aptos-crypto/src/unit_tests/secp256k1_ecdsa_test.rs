@@ -6,7 +6,7 @@ use crate::{
     test_utils::KeyPair,
     Signature, SigningKey, Uniform,
 };
-use elliptic_curve::{scalar::IsHigh as _, subtle::Choice};
+use elliptic_curve::scalar::IsHigh as _;
 use rand_core::OsRng;
 
 /// Tests that an individual signature share computed correctly on a message m passes verification on m.

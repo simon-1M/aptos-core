@@ -18,7 +18,7 @@ use aptos_crypto::{
     ed25519::{Ed25519PublicKey, Ed25519Signature},
     hash::CryptoHash,
     multi_ed25519::{MultiEd25519PublicKey, MultiEd25519Signature},
-    secp256k1_ecdsa, secp256r1_ecdsa, signing_message,
+    secp256k1_ecdsa, secp256r1_ecdsa, signing_message_bcs,
     traits::Signature,
     CryptoMaterialError, HashValue, ValidCryptoMaterial, ValidCryptoMaterialStringExt,
 };
@@ -681,7 +681,7 @@ impl AccountAuthenticator {
             Self::NoAccountAuthenticator => bail!("No signature to verify."),
             // Abstraction delayed the authentication after prologue.
             Self::Abstraction { auth_data, .. } => {
-                ensure!(auth_data.signing_message_digest() == &HashValue::sha3_256_of(signing_message(message)?.as_slice()).to_vec(), "The signing message digest provided in Abstraction Authenticator is not expected");
+                ensure!(auth_data.signing_message_digest() == &HashValue::sha3_256_of(signing_message_bcs(message)?.as_slice()).to_vec(), "The signing message digest provided in Abstraction Authenticator is not expected");
                 Ok(())
             },
         }

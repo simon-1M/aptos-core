@@ -35,7 +35,7 @@ use crate::{
 };
 use aptos_crypto::{
     ed25519::{Ed25519PublicKey, Ed25519Signature},
-    signing_message, ValidCryptoMaterialStringExt,
+    signing_message_bcs, ValidCryptoMaterialStringExt,
 };
 use aptos_global_constants::adjust_gas_headroom;
 use aptos_logger::debug;
@@ -1397,7 +1397,7 @@ async fn construction_payloads(
     let unsigned_transaction = txn_builder.build();
 
     // Build a signing message so that an external signer can sign with Ed25519 without knowing BCS
-    let signing_message = hex::encode(signing_message(&unsigned_transaction).map_err(|err| {
+    let signing_message = hex::encode(signing_message_bcs(&unsigned_transaction).map_err(|err| {
         ApiError::InvalidInput(Some(format!(
             "Invalid transaction, can't build into a signing message {}",
             err
